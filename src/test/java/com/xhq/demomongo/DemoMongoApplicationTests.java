@@ -13,10 +13,11 @@ import org.springframework.data.mongodb.core.query.Update;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @SpringBootTest
-class DemomongoApplicationTests {
+class DemoMongoApplicationTests {
     @Autowired
     private MongoTemplate mongoTemplate;
 
@@ -24,7 +25,7 @@ class DemomongoApplicationTests {
     @Test
     void createUser() {
         User user = new User();
-        user.setName("周三");
+        user.setName("jack");
         user.setAge(18);
         user.setEmail("zhousan@163.com");
         User user1 = mongoTemplate.insert(user);
@@ -43,8 +44,15 @@ class DemomongoApplicationTests {
     //根据id查询
     @Test
     void getById() {
-        User user = mongoTemplate.findById("66c9934f8b53740167511c4d", User.class);
+        User user = mongoTemplate.findById("67a2d9ca6e3425630cd1f90d", User.class);
         System.out.println(user);
+    }
+
+    @Test
+    void findByList() {
+        Query query = new Query(Criteria.where("name").is("张三").and("age").gt(10));
+        List<User> users = mongoTemplate.find(query, User.class);
+        users.forEach(System.out::println);
     }
 
     //根据条件查询
@@ -80,25 +88,25 @@ class DemomongoApplicationTests {
         Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
         Query query = new Query(Criteria.where("name").regex(pattern));
         int page = 1;
-        int size = 2;
+        int size = 3;
         // 分页查询
-        Query pageQuery = query.skip((page - 1) * size).limit(size);
-        List<User> users = mongoTemplate.find(pageQuery, User.class);
-        long count = mongoTemplate.count(pageQuery, User.class);
-        HashMap<String, Object> map = new HashMap<>();
-        map.put("count", count);
-        map.put("data", users);
+        Query limitQuery = query.skip((page - 1) * size).limit(size);
+        List<User> users = mongoTemplate.find(limitQuery, User.class);
+        long count = mongoTemplate.count(limitQuery, User.class);
+        Map<String,Object> map = new HashMap<>();
+        map.put("list",users);
+        map.put("count",count);
         System.out.println(map);
+
     }
 
     //修改
     @Test
     public void updateUser() {
         User user = mongoTemplate.findById("66cac8a363edb37ee4308aae", User.class);
-        user.setAge(38);
         Query query = new Query(Criteria.where("_id").is(user.getId()));
         Update update = new Update();
-        update.set("age", user.getAge());
+        update.set("age", 25);
         UpdateResult result = mongoTemplate.upsert(query, update, User.class);
         long count = result.getModifiedCount();
         System.out.println(count);
@@ -107,7 +115,7 @@ class DemomongoApplicationTests {
     //删除
     @Test
     public void deleteUser() {
-        Query query = new Query(Criteria.where("_id").is("66cac8fe7117c35b0b626c55"));
+        Query query = new Query(Criteria.where("_id").is("66cbd221d509885cd2575ff3"));
         DeleteResult result = mongoTemplate.remove(query, User.class);
         long deletedCount = result.getDeletedCount();
         System.out.println("删除了" + deletedCount + "条数据");
